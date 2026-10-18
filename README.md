@@ -1,54 +1,58 @@
-# Safety rules module
+# CrossSight – Mixed-Traffic Crosswalk Counter
 
-Checks whether a detected person is inside a restricted zone for long enough to matter, and writes a JSON incident.
+## Project Overview
 
-## Setup
-```
-python -m pip install -r requirements.txt
-```
+CrossSight is a computer vision project for analyzing mixed traffic at pedestrian crossings. The project processes video footage and produces an output video and metadata to help review crosswalk activity.
 
-## Run
-- Tests: `python -m pytest -v`
-- Demo with fake data: `python run_sample.py` (prints one `ALERT:` and creates `incidents.jsonl`)
-- Delete `incidents.jsonl` before a real demo so the dashboard starts clean.
+## Problem Statement
 
-## Config (`config.json`)
-| Key | Meaning |
-|---|---|
-| `zone_id` | Name of the zone, copied into each event |
-| `polygon` | Zone corners in video pixel coordinates |
-| `target_class` | Class name to watch (must match the pipeline's label) |
-| `min_confidence` | Detections below this are ignored |
-| `persistence_seconds` | Person must stay in the zone this long before an alert |
-| `cooldown_seconds` | Minimum gap between alerts |
-| `output_file` | JSON-lines file the events are appended to |
+Pedestrian crossings can be difficult to monitor when pedestrians and vehicles share busy traffic areas. CrossSight aims to support the analysis of crossing activity through video processing and computer vision.
 
-## Input (one frame)
-```
-{"timestamp": "ISO-8601", "objects": [{"class": "person", "confidence": 0.94, "bbox": [x1, y1, x2, y2]}]}
-```
+## Pipeline Overview
 
-## Output (one line per event in `incidents.jsonl`)
-```
-{"timestamp": "...", "event_type": "zone_intrusion", "zone": "restricted_1", "confidence": 0.94, "bbox": [x1, y1, x2, y2], "status": "new"}
-```
+1. Provide the traffic or crosswalk video as input.
+2. Process the video through the project's computer vision pipeline.
+3. Apply the configured zone rules where applicable.
+4. Generate the processed video and metadata.
+5. Review the output to evaluate the results.
 
-## Using it from the pipeline
-```python
-from zone_rules import ZoneMonitor, load_config
-mon = ZoneMonitor(load_config())
-events = mon.process_frame(frame_metadata)   # returns a list of new events
-```
-If PipeGen's real output uses different field names, bbox format or timestamps, convert them at the top of `process_frame`.
+## Project Structure
 
-## Known limitation
-Detections carry no person IDs, so the zone is treated as occupied or empty rather than tracking individuals.
+- `docs/` – Project documentation and screenshots.
+- `output/output.mp4` – Processed output video.
+- `output/metadata.json` – Sample output metadata.
+- `scripts/count_crossings.py` – Crossing-counting script.
+- `scripts/zone_rules.py` – Zone-rule logic.
+- `scripts/test_zone_rules.py` – Tests for zone rules.
 
-## Format adapter (handles PipeGen output differences)
-`zone_rules.py` accepts these variations without code changes:
-- objects under `objects`, `detections`, `predictions` or `boxes`
-- class under `class`, `label`, `class_name`, `name` or `class_id`, any capitalization; numeric ids are mapped by the optional config key `class_map` (default `{"0": "person"}`)
-- confidence under `confidence`, `score` or `conf` (missing = treated as confident)
-- boxes as `[x1,y1,x2,y2]`, `[x,y,w,h]` (set `"bbox_format": "xywh"` in config) or a dict with `x1/y1/x2/y2`, `xmin/ymin/xmax/ymax`, `left/top/width/height` or `x/y/w/h`
-- timestamps as ISO text, epoch seconds/ms/ns (optional config `"timestamp_unit": "auto|s|ms|ns"`; use `"ns"` for small relative nanosecond values), or a frame number (`frame`, `frame_number`, ...) converted with config `"fps"` (default 30); with no timestamp the current clock is used
-- one bad detection is skipped instead of crashing the frame
+## Model and Precision
+
+The model name and measured precision should be documented here after checking the model used in the pipeline and its evaluation results. No unverified accuracy or precision values are reported.
+
+## Results
+
+The repository includes an output video and metadata file for reviewing the project's results. Add measured crossing counts, evaluation metrics, and benchmark or latency results when these are available.
+
+## Limitations
+
+- Performance may vary with lighting, camera angle, video quality, occlusion, and traffic density.
+- Counting accuracy should be evaluated against manually verified results.
+- The reliability of results depends on the input video and the pipeline configuration.
+
+## How to Run
+
+1. Clone or download this repository.
+2. Install the dependencies required by the project.
+3. Follow the actual pipeline and script instructions for processing the input video.
+4. Review `output/output.mp4` and `output/metadata.json`.
+
+Use the Python scripts in the `scripts/` directory according to their input requirements and configuration.
+
+## Documentation and Evidence
+
+The `docs/` directory should contain the available project evidence, including the pipeline graph, benchmark and latency results, run screenshot, and compile card.
+
+## Export Note
+
+PipeGen export verification reportedly failed because of absolute paths in `pipeline.sh`, so the project was packaged manually.
+
