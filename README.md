@@ -1,4 +1,4 @@
-# Safety rules module (Workplace Safety Sentinel, Member 2)
+# Safety rules module
 
 Checks whether a detected person is inside a restricted zone for long enough to matter, and writes a JSON incident.
 
